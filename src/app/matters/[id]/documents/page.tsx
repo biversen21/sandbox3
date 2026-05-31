@@ -7,11 +7,19 @@ import {
   DOCUMENT_TYPE_LABELS,
   DOCUMENT_STATUS_LABELS,
 } from '@/lib/constants';
-import { uploadDocument, deleteDocument, extractDocumentText } from './actions';
+import { uploadDocument, deleteDocument, extractDocumentText, suggestFacts } from './actions';
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ uploaded?: string; error?: string }>;
+  searchParams: Promise<{
+    uploaded?: string;
+    error?: string;
+    suggest_created?: string;
+    suggest_updated?: string;
+    suggest_skipped?: string;
+    suggest_doc?: string;
+    suggest_error?: string;
+  }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -47,7 +55,15 @@ function fileExtLabel(filename: string): string {
 
 export default async function DocumentsPage({ params, searchParams }: Props) {
   const { id } = await params;
-  const { uploaded, error } = await searchParams;
+  const {
+    uploaded,
+    error,
+    suggest_created,
+    suggest_updated,
+    suggest_skipped,
+    suggest_doc,
+    suggest_error,
+  } = await searchParams;
 
   const matter = await prisma.matter.findUnique({ where: { id } });
   if (!matter) notFound();
@@ -82,6 +98,33 @@ export default async function DocumentsPage({ params, searchParams }: Props) {
       {error && (
         <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800">
           {error}
+        </div>
+      )}
+
+      {/* AI suggest facts success banner */}
+      {(suggest_created !== undefined ||
+        suggest_updated !== undefined ||
+        suggest_skipped !== undefined) && (
+        <div className="mb-5 rounded-md border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm text-blue-800">
+          <span className="font-medium">AI fact extraction complete</span>
+          {suggest_doc && <span> — {suggest_doc}</span>}
+          {'. '}
+          Created: {suggest_created ?? 0}, Updated: {suggest_updated ?? 0}, Skipped:{' '}
+          {suggest_skipped ?? 0}
+          {Number(suggest_skipped) > 0 && ' (verified facts were not overwritten)'}.{' '}
+          <a
+            href={`/matters/${matter.id}/facts`}
+            className="underline font-medium hover:text-blue-900"
+          >
+            Review suggested facts →
+          </a>
+        </div>
+      )}
+
+      {/* AI suggest facts error banner */}
+      {suggest_error && (
+        <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800">
+          <span className="font-medium">AI extraction error:</span> {suggest_error}
         </div>
       )}
 
@@ -154,6 +197,7 @@ export default async function DocumentsPage({ params, searchParams }: Props) {
             {documents.map((doc) => {
               const deleteAction = deleteDocument.bind(null, doc.id, matter.id);
               const extractAction = extractDocumentText.bind(null, doc.id, matter.id);
+              const suggestAction = suggestFacts.bind(null, doc.id, matter.id);
               const typeLabel = doc.document_type
                 ? (DOCUMENT_TYPE_LABELS[doc.document_type] ?? doc.document_type)
                 : 'Unclassified';
@@ -169,6 +213,7 @@ export default async function DocumentsPage({ params, searchParams }: Props) {
                 doc.processing_status !== 'processing' &&
                 doc.processing_status !== 'unsupported';
               const hasText = !!doc.extracted_text;
+              const canSuggest = hasText;
 
               return (
                 <div key={doc.id} className="px-4 py-3">
@@ -231,6 +276,18 @@ export default async function DocumentsPage({ params, searchParams }: Props) {
                             className="text-xs text-blue-600 hover:text-blue-800 underline"
                           >
                             {hasText ? 'Re-extract' : 'Extract Text'}
+                          </button>
+                        </form>
+                      )}
+
+                      {/* Suggest Facts */}
+                      {canSuggest && (
+                        <form action={suggestAction}>
+                          <button
+                            type="submit"
+                            className="text-xs text-indigo-600 hover:text-indigo-800 underline"
+                          >
+                            Suggest Facts
                           </button>
                         </form>
                       )}
