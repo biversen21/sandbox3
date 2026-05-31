@@ -1,0 +1,207 @@
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
+import { prisma } from '@/lib/prisma';
+import {
+  DOCUMENT_TYPES,
+  DOCUMENT_TYPE_LABELS,
+  DOCUMENT_STATUS_LABELS,
+} from '@/lib/constants';
+import { uploadDocument, deleteDocument } from './actions';
+
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ uploaded?: string; error?: string }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const matter = await prisma.matter.findUnique({ where: { id } });
+  return { title: matter ? `Documents — ${matter.name}` : 'Matter Not Found' };
+}
+
+const ACCEPTED_TYPES = '.pdf,.png,.jpg,.jpeg,.gif,.tiff,.bmp,.webp';
+
+const STATUS_BADGE: Record<string, string> = {
+  uploaded: 'bg-blue-100 text-blue-800',
+  pending: 'bg-blue-100 text-blue-800',
+  processing: 'bg-amber-100 text-amber-800',
+  complete: 'bg-green-100 text-green-800',
+  failed: 'bg-red-100 text-red-800',
+};
+
+function fileExtBadge(filename: string): string {
+  const ext = filename.split('.').pop()?.toUpperCase() ?? '?';
+  return ext.length <= 5 ? ext : ext.slice(0, 5);
+}
+
+export default async function DocumentsPage({ params, searchParams }: Props) {
+  const { id } = await params;
+  const { uploaded, error } = await searchParams;
+
+  const matter = await prisma.matter.findUnique({ where: { id } });
+  if (!matter) notFound();
+
+  const documents = await prisma.document.findMany({
+    where: { matter_id: id },
+    orderBy: { uploaded_at: 'desc' },
+  });
+
+  const uploadAction = uploadDocument.bind(null, matter.id);
+
+  return (
+    <div>
+      <div className="mb-6">
+        <Link href={`/matters/${matter.id}`} className="text-sm text-gray-500 hover:text-gray-900">
+          ← {matter.name}
+        </Link>
+        <h1 className="text-xl font-semibold text-gray-900 mt-2">Documents</h1>
+        <p className="text-sm text-gray-500 mt-0.5">
+          Upload supporting documents. No text extraction yet — documents are stored for reference.
+        </p>
+      </div>
+
+      {/* Success banner */}
+      {uploaded === '1' && (
+        <div className="mb-5 rounded-md border border-green-200 bg-green-50 px-4 py-2.5 text-sm text-green-800">
+          Document uploaded successfully.
+        </div>
+      )}
+
+      {/* Error banner */}
+      {error && (
+        <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800">
+          {error}
+        </div>
+      )}
+
+      {/* Upload form */}
+      <div className="rounded-lg border border-gray-200 bg-white p-5 mb-6">
+        <h2 className="text-sm font-semibold text-gray-900 mb-4">Upload Document</h2>
+        <form action={uploadAction} className="space-y-4 max-w-lg">
+          <div>
+            <label htmlFor="file" className="block text-sm font-medium text-gray-700 mb-1">
+              File <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="file"
+              name="file"
+              type="file"
+              accept={ACCEPTED_TYPES}
+              required
+              className="w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-50"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              PDF, PNG, JPG, GIF, TIFF, WEBP · Max 10 MB
+            </p>
+          </div>
+
+          <div>
+            <label
+              htmlFor="document_type"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Document Type
+            </label>
+            <select
+              id="document_type"
+              name="document_type"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+            >
+              <option value="">Select type (optional)</option>
+              {Object.values(DOCUMENT_TYPES).map((t) => (
+                <option key={t} value={t}>
+                  {DOCUMENT_TYPE_LABELS[t] ?? t}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
+          >
+            Upload
+          </button>
+        </form>
+      </div>
+
+      {/* Document list */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <h2 className="text-sm font-semibold text-gray-900">Uploaded Documents</h2>
+          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+            {documents.length}
+          </span>
+        </div>
+
+        {documents.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-gray-300 py-12 text-center">
+            <p className="text-sm text-gray-400">No documents uploaded yet.</p>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-gray-200 bg-white divide-y divide-gray-100">
+            {documents.map((doc) => {
+              const deleteAction = deleteDocument.bind(null, doc.id, matter.id);
+              const typeLabel = doc.document_type
+                ? (DOCUMENT_TYPE_LABELS[doc.document_type] ?? doc.document_type)
+                : 'Unclassified';
+              const statusLabel =
+                DOCUMENT_STATUS_LABELS[doc.processing_status] ?? doc.processing_status;
+              const statusBadge =
+                STATUS_BADGE[doc.processing_status] ?? 'bg-gray-100 text-gray-700';
+
+              return (
+                <div
+                  key={doc.id}
+                  className="flex items-center gap-4 px-4 py-3"
+                >
+                  {/* File type badge */}
+                  <div className="shrink-0 w-10 h-10 rounded border border-gray-200 bg-gray-50 flex items-center justify-center">
+                    <span className="text-xs font-bold text-gray-400">
+                      {fileExtBadge(doc.filename)}
+                    </span>
+                  </div>
+
+                  {/* File info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{doc.filename}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{typeLabel}</p>
+                  </div>
+
+                  {/* Status + date */}
+                  <div className="shrink-0 flex items-center gap-3">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge}`}
+                    >
+                      {statusLabel}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {new Date(doc.uploaded_at).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  {/* Delete */}
+                  <form action={deleteAction} className="shrink-0">
+                    <button
+                      type="submit"
+                      className="text-xs text-gray-400 hover:text-red-600 transition-colors"
+                      aria-label={`Delete ${doc.filename}`}
+                    >
+                      Delete
+                    </button>
+                  </form>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <p className="mt-4 text-xs text-gray-400">
+          Documents are stored locally for development. No text or fact extraction occurs
+          automatically. AI extraction will be added in a future release.
+        </p>
+      </div>
+    </div>
+  );
+}

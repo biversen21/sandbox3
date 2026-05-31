@@ -19,11 +19,10 @@ const LINKED_SECTIONS = [
   { key: 'issues', label: 'Issues', href: (id: string) => `/matters/${id}/issues` },
   { key: 'readiness', label: 'Filing Readiness', href: (id: string) => `/matters/${id}/readiness` },
   { key: 'report', label: 'Filing Readiness Report', href: (id: string) => `/matters/${id}/report` },
+  { key: 'documents', label: 'Documents', href: (id: string) => `/matters/${id}/documents` },
 ] as const;
 
-const PLACEHOLDER_SECTIONS = [
-  { key: 'documents', label: 'Documents' },
-];
+const PLACEHOLDER_SECTIONS: { key: string; label: string }[] = [];
 
 export default async function MatterDetailPage({ params }: Props) {
   const { id } = await params;

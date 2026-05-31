@@ -125,7 +125,7 @@ export const DOCUMENT_TYPES = {
 export type DocumentType = (typeof DOCUMENT_TYPES)[keyof typeof DOCUMENT_TYPES];
 
 export const DOCUMENT_PROCESSING_STATUSES = {
-  PENDING: 'pending',
+  UPLOADED: 'uploaded',
   PROCESSING: 'processing',
   COMPLETE: 'complete',
   FAILED: 'failed',
@@ -184,4 +184,24 @@ export const EXTRACTION_METHOD_LABELS: Record<string, string> = {
   manual_intake: 'Intake',
   ai: 'AI',
   import: 'Import',
+};
+
+export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
+  police_report: 'Police Report',
+  medical_record: 'Medical Record',
+  insurance_document: 'Insurance Document',
+  photo_evidence: 'Photo Evidence',
+  witness_statement: 'Witness Statement',
+  corporate_filing: 'Corporate Filing',
+  contract: 'Contract',
+  correspondence: 'Correspondence',
+  other: 'Other',
+};
+
+export const DOCUMENT_STATUS_LABELS: Record<string, string> = {
+  uploaded: 'Uploaded',
+  pending: 'Uploaded',   // schema default; display same as uploaded
+  processing: 'Processing',
+  complete: 'Processed',
+  failed: 'Failed',
 };
