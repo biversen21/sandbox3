@@ -47,6 +47,7 @@ export const FACT_TYPES = {
   // Defendant
   DEFENDANT_NAME: 'defendant_name',
   DEFENDANT_TYPE: 'defendant_type',
+  DEFENDANT_RESIDENCE: 'defendant_residence',
   DEFENDANT_INCORPORATION_STATE: 'defendant_incorporation_state',
   DEFENDANT_PRINCIPAL_PLACE_OF_BUSINESS: 'defendant_principal_place_of_business',
   DEFENDANT_SERVICE_ADDRESS: 'defendant_service_address',
@@ -146,4 +147,41 @@ export const MATTER_STATUS_LABELS: Record<MatterStatus, string> = {
   filing_ready: 'Filing Ready',
   filed: 'Filed',
   closed: 'Closed',
+};
+
+export const ENTITY_TYPE_LABELS: Record<EntityType, string> = {
+  individual: 'Individual',
+  corporation: 'Corporation',
+  llc: 'LLC',
+  partnership: 'Partnership',
+  government: 'Government Entity',
+  nonprofit: 'Nonprofit',
+  other: 'Other',
+};
+
+export const FACT_TYPE_LABELS: Record<string, string> = {
+  plaintiff_name: 'Plaintiff Name',
+  plaintiff_residence: 'Plaintiff Residence',
+  plaintiff_citizenship: 'Plaintiff Citizenship',
+  defendant_name: 'Defendant Name',
+  defendant_type: 'Defendant Type',
+  defendant_residence: 'Defendant Residence',
+  defendant_incorporation_state: 'State of Incorporation',
+  defendant_principal_place_of_business: 'Principal Place of Business',
+  defendant_service_address: 'Service Address',
+  incident_date: 'Incident Date',
+  incident_address: 'Incident Address',
+  incident_county: 'Incident County',
+  incident_state: 'Incident State',
+  medical_expenses: 'Medical Expenses',
+  lost_wages: 'Lost Wages',
+  property_damage: 'Property Damage',
+  estimated_amount_in_controversy: 'Est. Amount in Controversy',
+};
+
+export const EXTRACTION_METHOD_LABELS: Record<string, string> = {
+  manual: 'Manual',
+  manual_intake: 'Intake',
+  ai: 'AI',
+  import: 'Import',
 };

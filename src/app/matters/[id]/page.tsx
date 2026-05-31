@@ -13,10 +13,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: matter ? `${matter.name} — Filing Readiness` : 'Matter Not Found' };
 }
 
+const LINKED_SECTIONS = [
+  { key: 'intake', label: 'Intake', href: (id: string) => `/matters/${id}/intake` },
+  { key: 'facts', label: 'Facts', href: (id: string) => `/matters/${id}/facts` },
+] as const;
+
 const PLACEHOLDER_SECTIONS = [
-  { key: 'intake', label: 'Intake' },
   { key: 'documents', label: 'Documents' },
-  { key: 'facts', label: 'Facts' },
   { key: 'issues', label: 'Issues' },
   { key: 'report', label: 'Filing Readiness Report' },
 ];
@@ -86,15 +89,23 @@ export default async function MatterDetailPage({ params }: Props) {
       </div>
 
       <div className="space-y-2">
+        {LINKED_SECTIONS.map(({ key, label, href }) => (
+          <Link
+            key={key}
+            href={href(matter.id)}
+            className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 hover:bg-gray-50"
+          >
+            <h2 className="text-sm font-medium text-gray-900">{label}</h2>
+            <span className="text-xs text-gray-400">→</span>
+          </Link>
+        ))}
         {PLACEHOLDER_SECTIONS.map(({ key, label }) => (
           <div
             key={key}
-            className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-3"
+            className="flex items-center justify-between rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-3"
           >
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-medium text-gray-700">{label}</h2>
-              <span className="text-xs text-gray-400">Coming in next PR</span>
-            </div>
+            <h2 className="text-sm font-medium text-gray-500">{label}</h2>
+            <span className="text-xs text-gray-400">Coming in next PR</span>
           </div>
         ))}
       </div>
