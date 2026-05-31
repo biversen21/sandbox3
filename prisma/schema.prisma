@@ -74,8 +74,11 @@ model Document {
   mime_type         String?  // e.g. application/pdf
   size_bytes        Int?     // file size in bytes
   storage_url       String?
-  processing_status String   @default("pending")
-  uploaded_at       DateTime @default(now())
+  processing_status String    @default("pending")
+  uploaded_at       DateTime  @default(now())
+  extracted_text    String?
+  extracted_at      DateTime?
+  extraction_error  String?
 
   matter Matter @relation(fields: [matter_id], references: [id], onDelete: Cascade)
   facts  Fact[]

@@ -127,6 +127,9 @@ export type DocumentType = (typeof DOCUMENT_TYPES)[keyof typeof DOCUMENT_TYPES];
 export const DOCUMENT_PROCESSING_STATUSES = {
   UPLOADED: 'uploaded',
   PROCESSING: 'processing',
+  TEXT_EXTRACTED: 'text_extracted',
+  EXTRACTION_FAILED: 'extraction_failed',
+  UNSUPPORTED: 'unsupported',
   COMPLETE: 'complete',
   FAILED: 'failed',
 } as const;
@@ -200,8 +203,11 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
 
 export const DOCUMENT_STATUS_LABELS: Record<string, string> = {
   uploaded: 'Uploaded',
-  pending: 'Uploaded',   // schema default; display same as uploaded
+  pending: 'Uploaded',
   processing: 'Processing',
+  text_extracted: 'Text Extracted',
+  extraction_failed: 'Extraction Failed',
+  unsupported: 'Unsupported',
   complete: 'Processed',
   failed: 'Failed',
 };
