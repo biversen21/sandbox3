@@ -78,6 +78,86 @@ export async function uploadDocument(matterId: string, formData: FormData): Prom
   redirect(`/matters/${matterId}/documents?uploaded=1`);
 }
 
+const PDF_MIME_TYPE = 'application/pdf';
+
+export async function extractDocumentText(documentId: string, matterId: string): Promise<void> {
+  const doc = await prisma.document.findUnique({ where: { id: documentId } });
+
+  if (!doc || !doc.storage_url) {
+    revalidatePath(`/matters/${matterId}/documents`);
+    return;
+  }
+
+  if (doc.mime_type !== PDF_MIME_TYPE) {
+    await prisma.document.update({
+      where: { id: documentId },
+      data: { processing_status: 'unsupported' },
+    });
+    revalidatePath(`/matters/${matterId}/documents`);
+    return;
+  }
+
+  await prisma.document.update({
+    where: { id: documentId },
+    data: { processing_status: 'processing' },
+  });
+
+  try {
+    const absPath = path.join(process.cwd(), doc.storage_url);
+    const fileBytes = await fs.readFile(absPath);
+
+    // pdfjs-dist legacy build — required for Node.js (main build uses browser globals)
+    const pdfjsPath = path.join(process.cwd(), 'node_modules/pdfjs-dist/legacy/build/pdf.mjs');
+    const workerPath = path.join(
+      process.cwd(),
+      'node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs',
+    );
+    const pdfjs = await import(/* webpackIgnore: true */ pdfjsPath);
+    pdfjs.GlobalWorkerOptions.workerSrc = workerPath;
+
+    const loadingTask = pdfjs.getDocument({
+      data: new Uint8Array(fileBytes),
+      useWorkerFetch: false,
+      isEvalSupported: false,
+      disableFontFace: true,
+    });
+    const pdfDoc = await loadingTask.promise;
+
+    let text = '';
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+      const page = await pdfDoc.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items
+        .filter((item: { str?: string }) => typeof item.str === 'string')
+        .map((item: { str: string }) => item.str)
+        .join(' ');
+      text += pageText + '\n';
+    }
+
+    await prisma.document.update({
+      where: { id: documentId },
+      data: {
+        processing_status: 'text_extracted',
+        extracted_text: text.trim(),
+        extracted_at: new Date(),
+        extraction_error: null,
+      },
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await prisma.document.update({
+      where: { id: documentId },
+      data: {
+        processing_status: 'extraction_failed',
+        extraction_error: message,
+        extracted_at: new Date(),
+      },
+    });
+  }
+
+  revalidatePath(`/matters/${matterId}/documents`);
+}
+
 export async function deleteDocument(documentId: string, matterId: string): Promise<void> {
   const doc = await prisma.document.findUnique({ where: { id: documentId } });
 
