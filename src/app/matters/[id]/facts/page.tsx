@@ -42,6 +42,10 @@ export default async function FactsPage({ params }: Props) {
     orderBy: { created_at: 'desc' },
   });
 
+  const aiPendingCount = facts.filter(
+    (f) => f.extraction_method === 'ai_document_extraction' && !f.human_verified,
+  ).length;
+
   return (
     <div>
       <div className="flex items-start justify-between mb-6">
@@ -55,6 +59,11 @@ export default async function FactsPage({ params }: Props) {
           <h1 className="text-xl font-semibold text-gray-900 mt-2">Facts</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {facts.length} fact{facts.length !== 1 ? 's' : ''}
+            {aiPendingCount > 0 && (
+              <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                {aiPendingCount} need{aiPendingCount === 1 ? 's' : ''} review
+              </span>
+            )}
           </p>
         </div>
         <Link
@@ -93,7 +102,14 @@ export default async function FactsPage({ params }: Props) {
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white">
               {facts.map((fact) => (
-                <tr key={fact.id} className="hover:bg-gray-50">
+                <tr
+                  key={fact.id}
+                  className={
+                    fact.extraction_method === 'ai_document_extraction' && !fact.human_verified
+                      ? 'bg-amber-50/40 hover:bg-amber-50'
+                      : 'hover:bg-gray-50'
+                  }
+                >
                   <td className="px-3 py-2.5 font-medium text-gray-900 whitespace-nowrap">
                     {labelFactType(fact.fact_type)}
                   </td>
@@ -113,6 +129,10 @@ export default async function FactsPage({ params }: Props) {
                     {fact.human_verified ? (
                       <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
                         Verified
+                      </span>
+                    ) : fact.extraction_method === 'ai_document_extraction' ? (
+                      <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                        Needs review
                       </span>
                     ) : (
                       <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">

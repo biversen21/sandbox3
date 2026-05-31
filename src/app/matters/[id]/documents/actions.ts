@@ -5,6 +5,7 @@ import fs from 'fs/promises';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import { extractFactsFromText } from '@/lib/ai';
 
 // TODO: Replace with S3-compatible storage (e.g. AWS S3, Cloudflare R2) before production.
 const UPLOADS_ROOT = path.join(process.cwd(), 'uploads');
@@ -156,6 +157,86 @@ export async function extractDocumentText(documentId: string, matterId: string):
   }
 
   revalidatePath(`/matters/${matterId}/documents`);
+}
+
+export async function suggestFacts(documentId: string, matterId: string): Promise<void> {
+  const doc = await prisma.document.findUnique({ where: { id: documentId } });
+
+  if (!doc || !doc.extracted_text) {
+    redirect(
+      `/matters/${matterId}/documents?suggest_error=${encodeURIComponent('No extracted text found. Extract text from the PDF first.')}`,
+    );
+  }
+
+  let created = 0;
+  let updated = 0;
+  let skipped = 0;
+  let errorMessage: string | null = null;
+
+  try {
+    const suggestions = await extractFactsFromText(doc.extracted_text);
+
+    for (const suggested of suggestions) {
+      // Skip if a verified fact already exists for this matter + fact_type
+      const verifiedExisting = await prisma.fact.findFirst({
+        where: { matter_id: matterId, fact_type: suggested.fact_type, human_verified: true },
+      });
+      if (verifiedExisting) {
+        skipped++;
+        continue;
+      }
+
+      // Update if an unverified fact from this exact document already exists
+      const sameDocExisting = await prisma.fact.findFirst({
+        where: {
+          matter_id: matterId,
+          fact_type: suggested.fact_type,
+          human_verified: false,
+          document_id: documentId,
+        },
+      });
+
+      if (sameDocExisting) {
+        await prisma.fact.update({
+          where: { id: sameDocExisting.id },
+          data: {
+            value: suggested.value,
+            confidence: suggested.confidence,
+          },
+        });
+        updated++;
+      } else {
+        await prisma.fact.create({
+          data: {
+            matter_id: matterId,
+            fact_type: suggested.fact_type,
+            value: suggested.value,
+            confidence: suggested.confidence,
+            extraction_method: 'ai_document_extraction',
+            source_document: doc.filename,
+            document_id: documentId,
+            human_verified: false,
+          },
+        });
+        created++;
+      }
+    }
+  } catch (err) {
+    errorMessage =
+      err instanceof Error ? err.message : 'Unexpected error during AI fact extraction.';
+  }
+
+  revalidatePath(`/matters/${matterId}/facts`);
+
+  if (errorMessage) {
+    redirect(
+      `/matters/${matterId}/documents?suggest_error=${encodeURIComponent(errorMessage.slice(0, 400))}`,
+    );
+  }
+
+  redirect(
+    `/matters/${matterId}/documents?suggest_created=${created}&suggest_updated=${updated}&suggest_skipped=${skipped}&suggest_doc=${encodeURIComponent(doc.filename)}`,
+  );
 }
 
 export async function deleteDocument(documentId: string, matterId: string): Promise<void> {

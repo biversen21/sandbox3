@@ -86,6 +86,7 @@ export type SeverityLevel = (typeof SEVERITY_LEVELS)[keyof typeof SEVERITY_LEVEL
 export const EXTRACTION_METHODS = {
   MANUAL: 'manual',
   AI: 'ai',
+  AI_DOCUMENT_EXTRACTION: 'ai_document_extraction',
   IMPORT: 'import',
 } as const;
 
@@ -186,6 +187,7 @@ export const EXTRACTION_METHOD_LABELS: Record<string, string> = {
   manual: 'Manual',
   manual_intake: 'Intake',
   ai: 'AI',
+  ai_document_extraction: 'AI — Document',
   import: 'Import',
 };
 
