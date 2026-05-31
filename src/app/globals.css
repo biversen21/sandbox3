@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+@media print {
+  header {
+    display: none !important;
+  }
+
+  @page {
+    margin: 0.75in;
+  }
+}

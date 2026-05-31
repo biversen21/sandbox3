@@ -18,6 +18,7 @@ const LINKED_SECTIONS = [
   { key: 'facts', label: 'Facts', href: (id: string) => `/matters/${id}/facts` },
   { key: 'issues', label: 'Issues', href: (id: string) => `/matters/${id}/issues` },
   { key: 'readiness', label: 'Filing Readiness', href: (id: string) => `/matters/${id}/readiness` },
+  { key: 'report', label: 'Filing Readiness Report', href: (id: string) => `/matters/${id}/report` },
 ] as const;
 
 const PLACEHOLDER_SECTIONS = [
