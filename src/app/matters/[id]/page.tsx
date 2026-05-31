@@ -16,12 +16,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 const LINKED_SECTIONS = [
   { key: 'intake', label: 'Intake', href: (id: string) => `/matters/${id}/intake` },
   { key: 'facts', label: 'Facts', href: (id: string) => `/matters/${id}/facts` },
+  { key: 'issues', label: 'Issues', href: (id: string) => `/matters/${id}/issues` },
+  { key: 'readiness', label: 'Filing Readiness', href: (id: string) => `/matters/${id}/readiness` },
 ] as const;
 
 const PLACEHOLDER_SECTIONS = [
   { key: 'documents', label: 'Documents' },
-  { key: 'issues', label: 'Issues' },
-  { key: 'report', label: 'Filing Readiness Report' },
 ];
 
 export default async function MatterDetailPage({ params }: Props) {
