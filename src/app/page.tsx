@@ -7,7 +7,7 @@ export default function Home() {
         Plaintiff Filing Readiness Analyzer
       </h1>
       <p className="text-sm text-gray-500 max-w-sm">
-        Identify, organize, and validate filing-critical facts before your matter is ready to file.
+        Identify, organize, and validate the filing-critical facts attorneys need before any filing decision.
       </p>
       <Link
         href="/matters"
