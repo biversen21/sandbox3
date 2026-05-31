@@ -120,10 +120,21 @@ export default async function FactsPage({ params }: Props) {
                   <td className="px-3 py-2.5 text-gray-500 whitespace-nowrap">
                     {labelMethod(fact.extraction_method)}
                   </td>
-                  <td className="px-3 py-2.5 text-gray-500 whitespace-nowrap">
-                    {fact.source_document
-                      ? `${fact.source_document}${fact.page_number ? ` p.${fact.page_number}` : ''}`
-                      : '—'}
+                  <td className="px-3 py-2.5 text-gray-500 max-w-[220px]">
+                    <span className="whitespace-nowrap">
+                      {fact.source_document
+                        ? `${fact.source_document}${fact.page_number ? ` p.${fact.page_number}` : ''}`
+                        : '—'}
+                    </span>
+                    {fact.source_quote && (
+                      <p className="text-xs text-gray-400 italic mt-0.5 leading-snug">
+                        Source excerpt: &ldquo;
+                        {fact.source_quote.length > 120
+                          ? fact.source_quote.slice(0, 120) + '…'
+                          : fact.source_quote}
+                        &rdquo;
+                      </p>
+                    )}
                   </td>
                   <td className="px-3 py-2.5 whitespace-nowrap">
                     {fact.human_verified ? (

@@ -99,6 +99,7 @@ model Fact {
   extraction_method String   @default("manual")
   source_document   String?
   page_number       Int?
+  source_quote      String?
   human_verified    Boolean  @default(false)
   verified_by       String?
   created_at        DateTime @default(now())
