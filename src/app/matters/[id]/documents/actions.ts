@@ -54,6 +54,8 @@ export async function uploadDocument(matterId: string, formData: FormData): Prom
       matter_id: matterId,
       filename: file.name,
       document_type: documentType,
+      mime_type: file.type,
+      size_bytes: file.size,
       processing_status: 'uploaded',
     },
   });
