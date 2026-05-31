@@ -24,6 +24,9 @@ build/
 # Generated
 next-env.d.ts
 
+# Uploads (local dev only — use S3-compatible storage in production)
+uploads/
+
 # Misc
 .DS_Store
 *.pem
