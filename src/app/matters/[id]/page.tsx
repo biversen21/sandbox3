@@ -30,6 +30,14 @@ export default async function MatterDetailPage({ params }: Props) {
 
   if (!matter) notFound();
 
+  const [factCount, docCount, aiPendingCount] = await Promise.all([
+    prisma.fact.count({ where: { matter_id: id } }),
+    prisma.document.count({ where: { matter_id: id } }),
+    prisma.fact.count({
+      where: { matter_id: id, extraction_method: 'ai_document_extraction', human_verified: false },
+    }),
+  ]);
+
   return (
     <div>
       <div className="flex items-start justify-between mb-6">
@@ -95,7 +103,24 @@ export default async function MatterDetailPage({ params }: Props) {
             href={href(matter.id)}
             className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 hover:bg-gray-50"
           >
-            <h2 className="text-sm font-medium text-gray-900">{label}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-medium text-gray-900">{label}</h2>
+              {key === 'facts' && factCount > 0 && (
+                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                  {factCount}
+                </span>
+              )}
+              {key === 'facts' && aiPendingCount > 0 && (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                  {aiPendingCount} need{aiPendingCount === 1 ? 's' : ''} review
+                </span>
+              )}
+              {key === 'documents' && docCount > 0 && (
+                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                  {docCount}
+                </span>
+              )}
+            </div>
             <span className="text-xs text-gray-400">→</span>
           </Link>
         ))}
