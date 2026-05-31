@@ -30,7 +30,14 @@ const STATUS_BADGE: Record<string, string> = {
   failed: 'bg-red-100 text-red-800',
 };
 
-function fileExtBadge(filename: string): string {
+function formatBytes(bytes: number | null): string {
+  if (bytes === null) return '—';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function fileExtLabel(filename: string): string {
   const ext = filename.split('.').pop()?.toUpperCase() ?? '?';
   return ext.length <= 5 ? ext : ext.slice(0, 5);
 }
@@ -150,26 +157,38 @@ export default async function DocumentsPage({ params, searchParams }: Props) {
                 DOCUMENT_STATUS_LABELS[doc.processing_status] ?? doc.processing_status;
               const statusBadge =
                 STATUS_BADGE[doc.processing_status] ?? 'bg-gray-100 text-gray-700';
+              const hasFile = !!doc.storage_url;
 
               return (
-                <div
-                  key={doc.id}
-                  className="flex items-center gap-4 px-4 py-3"
-                >
+                <div key={doc.id} className="flex items-center gap-4 px-4 py-3">
                   {/* File type badge */}
                   <div className="shrink-0 w-10 h-10 rounded border border-gray-200 bg-gray-50 flex items-center justify-center">
                     <span className="text-xs font-bold text-gray-400">
-                      {fileExtBadge(doc.filename)}
+                      {fileExtLabel(doc.filename)}
                     </span>
                   </div>
 
                   {/* File info */}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{doc.filename}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{typeLabel}</p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className="text-xs text-gray-500">{typeLabel}</span>
+                      {doc.mime_type && (
+                        <>
+                          <span className="text-xs text-gray-300">·</span>
+                          <span className="text-xs text-gray-400">{doc.mime_type}</span>
+                        </>
+                      )}
+                      {doc.size_bytes !== null && (
+                        <>
+                          <span className="text-xs text-gray-300">·</span>
+                          <span className="text-xs text-gray-400">{formatBytes(doc.size_bytes)}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Status + date */}
+                  {/* Status + date + actions */}
                   <div className="shrink-0 flex items-center gap-3">
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge}`}
@@ -179,28 +198,45 @@ export default async function DocumentsPage({ params, searchParams }: Props) {
                     <span className="text-xs text-gray-400">
                       {new Date(doc.uploaded_at).toLocaleDateString()}
                     </span>
-                  </div>
 
-                  {/* Delete */}
-                  <form action={deleteAction} className="shrink-0">
-                    <button
-                      type="submit"
-                      className="text-xs text-gray-400 hover:text-red-600 transition-colors"
-                      aria-label={`Delete ${doc.filename}`}
-                    >
-                      Delete
-                    </button>
-                  </form>
+                    {/* Open link */}
+                    {hasFile && (
+                      <Link
+                        href={`/api/documents/${doc.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-gray-500 hover:text-gray-900 underline"
+                      >
+                        Open
+                      </Link>
+                    )}
+
+                    {/* Delete */}
+                    <form action={deleteAction}>
+                      <button
+                        type="submit"
+                        className="text-xs text-gray-400 hover:text-red-600 transition-colors"
+                        aria-label={`Delete ${doc.filename}`}
+                      >
+                        Delete
+                      </button>
+                    </form>
+                  </div>
                 </div>
               );
             })}
           </div>
         )}
 
-        <p className="mt-4 text-xs text-gray-400">
-          Documents are stored locally for development. No text or fact extraction occurs
-          automatically. AI extraction will be added in a future release.
-        </p>
+        <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-xs text-amber-800 leading-relaxed">
+            <strong>Local development storage only.</strong> Uploaded files are stored on the
+            local filesystem under <code className="font-mono">uploads/</code>. This directory is
+            excluded from version control. Before production, replace with S3-compatible object
+            storage (AWS S3, Cloudflare R2, etc.). No text extraction or AI processing occurs
+            automatically — that will be added in a future release.
+          </p>
+        </div>
       </div>
     </div>
   );

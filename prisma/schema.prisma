@@ -71,6 +71,8 @@ model Document {
   matter_id         String
   filename          String
   document_type     String?
+  mime_type         String?  // e.g. application/pdf
+  size_bytes        Int?     // file size in bytes
   storage_url       String?
   processing_status String   @default("pending")
   uploaded_at       DateTime @default(now())
