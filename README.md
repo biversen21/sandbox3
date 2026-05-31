@@ -61,6 +61,17 @@ npm run build
 npx prisma studio
 ```
 
+### AI Fact Extraction (optional)
+
+To enable AI-assisted fact suggestion from extracted PDF text:
+
+```bash
+# Add to .env
+ANTHROPIC_API_KEY=your_key_here
+```
+
+Get a key at [console.anthropic.com](https://console.anthropic.com/). The app works without it — AI extraction buttons will show a friendly error message.
+
 ## Stack
 
 - [Next.js 15](https://nextjs.org/) — App Router, TypeScript
@@ -181,3 +192,125 @@ Four documented scenarios for validating the readiness engine, issues page, and 
 3. Navigate to **Filing Readiness** — expect 100% overall score.
 4. Navigate to **Issues** — expect 0 missing required facts. Low-confidence or unverified issues may appear if intake facts were not manually verified.
 5. Navigate to **Report** — Known Facts fully populated across all categories. Primary Blockers section shows none. Readiness score 100%. All report sections complete.
+
+---
+
+## Demo Walkthrough
+
+### Option A: Seeded demo matter (fastest)
+
+```bash
+# 1. Seed rules (if not already done)
+npm run db:seed
+
+# 2. Create the demo matter
+npm run db:demo
+
+# 3. Start the server
+npm run dev
+```
+
+Open `http://localhost:3000` → click **Johnson v. Acme Logistics Corp.**
+
+**What you'll see:**
+
+| Page | State |
+|---|---|
+| **Matter Detail** | Facts: 14 (2 need review), Documents: 0 |
+| **Facts** | 12 verified manual facts + 2 AI-extracted (amber highlight, Needs review badge) |
+| **Issues** | 1 missing (estimated_amount_in_controversy — high) · 1 low confidence · 2 needs review |
+| **Filing Readiness** | ~89% overall · Damages at 50% · Provenance ~89% |
+| **Report** | All 10 sections · Source excerpts on AI facts · Copy or Print |
+
+To complete the demo: go to **Intake**, add an amount in controversy, then re-check Readiness (→ 100%).
+
+---
+
+### Option B: Manual end-to-end walkthrough
+
+**Step 1 — Create a matter**
+- Go to `/matters/new`
+- Name: anything, Practice Area: Personal Injury, Status: Intake
+
+**Step 2 — Fill intake**
+- Plaintiff: name, residence, citizenship
+- Defendant: name, type = Corporation, incorporation state, principal place of business, service address
+- Incident: date, address, county, state
+- Damages: medical expenses (leave estimated amount out to see a blocker)
+
+**Step 3 — View Issues**
+- Navigate to Issues → see `estimated_amount_in_controversy` as a high-severity blocker
+
+**Step 4 — View Readiness**
+- Navigate to Filing Readiness → see Damages category at 50%, overall ~75%
+
+**Step 5 — Upload a document**
+- Navigate to Documents → upload a PDF
+- Click **Extract Text** → wait for `text_extracted` status
+
+**Step 6 — Suggest Facts (requires `ANTHROPIC_API_KEY`)**
+- Click **Suggest Facts** → AI extracts filing-relevant facts
+- Success banner shows created/updated/skipped counts
+- Click "Review suggested facts →"
+
+**Step 7 — Review AI facts**
+- Facts page: AI facts highlighted in amber with "Needs review" badge
+- Source column shows "Source excerpt:" with provenance quote
+- Click **Verify** on facts the attorney confirms → badge turns green
+
+**Step 8 — Add estimated amount**
+- Go to Intake or Facts → add `estimated_amount_in_controversy`
+
+**Step 9 — View Filing Readiness Report**
+- Navigate to Report → 10-section deterministic report
+- Click **Copy as Plain Text** or **Print** for attorney review
+
+---
+
+## MVP Status
+
+### What Works
+
+- Matter CRUD (create, read, update, delete)
+- Structured intake form — 17 filing-relevant fact types across plaintiff, defendant, incident, damages
+- Manual fact entry with provenance fields (source document, confidence, verification)
+- Document upload — PDF + image, local filesystem storage, 10 MB limit
+- Secure file serving — DB-validated path, path traversal prevention
+- PDF text extraction — `pdfjs-dist` legacy build, Node.js compatible, synchronous
+- AI fact suggestion from extracted text — Anthropic API, structured JSON output
+- Source quote provenance on AI-extracted facts
+- Attorney review workflow — Verify toggle promotes facts to `human_verified`
+- Missing fact detection — deterministic, PI rule pack, severity-coded
+- Low-confidence and needs-review issue flagging (< 75% confidence, unverified AI facts)
+- Filing readiness score — deterministic, 5-category weighted (Plaintiff/Defendant/Incident/Damages/Provenance)
+- Filing readiness report — 10 sections, print-friendly, copy-as-plain-text
+- No-LLM pipeline — all readiness, scoring, issue detection, and reporting is deterministic
+
+### Intentionally Not Built (MVP Scope)
+
+- OCR for images (text extraction is PDF-only)
+- Complaint or motion drafting
+- Legal research or citation generation
+- Venue analysis engine
+- Jurisdiction rule packs (beyond base PI)
+- Removal analysis
+- Embeddings / RAG / vector search
+- Authentication and user accounts
+- Enterprise RBAC
+- Background job queue
+- Billing
+- Integrations (Clio, Filevine, MyCase, etc.)
+- Multi-firm / multi-tenant support
+
+### Known Production Gaps
+
+| Gap | Notes |
+|---|---|
+| **File storage** | Local filesystem only — replace with S3/R2 before production |
+| **Authentication** | No auth — do not expose publicly without auth layer |
+| **Database** | SQLite for local dev — migrate to PostgreSQL before production |
+| **API key management** | `ANTHROPIC_API_KEY` in env var — use a secrets manager in production |
+| **Rate limiting** | No rate limits on uploads or AI extraction |
+| **Audit log** | Fact verification has no persistent audit trail |
+| **Multi-tenancy** | Single-tenant — no firm/user isolation |
+| **Error monitoring** | No Sentry or equivalent — add before production |
