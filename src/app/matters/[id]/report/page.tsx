@@ -116,6 +116,15 @@ function FactCard({ fact }: { fact: Fact }) {
               {fact.page_number ? `, p.${fact.page_number}` : ''}
             </p>
           )}
+          {fact.source_quote && (
+            <p className="text-xs text-gray-400 italic mt-0.5 leading-snug">
+              Source excerpt: &ldquo;
+              {fact.source_quote.length > 150
+                ? fact.source_quote.slice(0, 150) + '…'
+                : fact.source_quote}
+              &rdquo;
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
           <span

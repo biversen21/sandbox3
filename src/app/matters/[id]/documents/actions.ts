@@ -202,6 +202,7 @@ export async function suggestFacts(documentId: string, matterId: string): Promis
           data: {
             value: suggested.value,
             confidence: suggested.confidence,
+            source_quote: suggested.source_quote ?? null,
           },
         });
         updated++;
@@ -216,6 +217,7 @@ export async function suggestFacts(documentId: string, matterId: string): Promis
             source_document: doc.filename,
             document_id: documentId,
             human_verified: false,
+            source_quote: suggested.source_quote ?? null,
           },
         });
         created++;
