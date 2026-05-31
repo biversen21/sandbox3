@@ -133,3 +133,17 @@ export const DOCUMENT_PROCESSING_STATUSES = {
 export const REPORT_TYPES = {
   FILING_READINESS: 'filing_readiness',
 } as const;
+
+export const PRACTICE_AREA_LABELS: Record<PracticeArea, string> = {
+  personal_injury: 'Personal Injury',
+  premises_liability: 'Premises Liability',
+  motor_vehicle: 'Motor Vehicle Accident',
+};
+
+export const MATTER_STATUS_LABELS: Record<MatterStatus, string> = {
+  intake: 'Intake',
+  active: 'Active',
+  filing_ready: 'Filing Ready',
+  filed: 'Filed',
+  closed: 'Closed',
+};
